@@ -294,6 +294,11 @@ class RhythmBlocks {
             this.wrapMode = e.target.checked;
             this.applyWrapMode();
         });
+        
+        // Fullscreen toggle
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            this.toggleFullscreen();
+        });
     }
     
     applyWrapMode() {
@@ -306,6 +311,37 @@ class RhythmBlocks {
         } else {
             container.classList.remove('wrap-mode');
             rhythmView.classList.remove('wrap-mode');
+        }
+    }
+    
+    toggleFullscreen() {
+        const container = document.querySelector('.rhythm-view-container');
+        this.isFullscreen = !this.isFullscreen;
+        
+        if (this.isFullscreen) {
+            container.classList.add('fullscreen-mode');
+            // Add exit button
+            const exitBtn = document.createElement('button');
+            exitBtn.className = 'fullscreen-exit-btn';
+            exitBtn.id = 'fullscreenExitBtn';
+            exitBtn.textContent = '✕ Exit Fullscreen';
+            exitBtn.addEventListener('click', () => this.toggleFullscreen());
+            document.body.appendChild(exitBtn);
+            // Also allow Escape key to exit
+            this.escapeHandler = (e) => {
+                if (e.key === 'Escape') this.toggleFullscreen();
+            };
+            document.addEventListener('keydown', this.escapeHandler);
+        } else {
+            container.classList.remove('fullscreen-mode');
+            // Remove exit button
+            const exitBtn = document.getElementById('fullscreenExitBtn');
+            if (exitBtn) exitBtn.remove();
+            // Remove escape handler
+            if (this.escapeHandler) {
+                document.removeEventListener('keydown', this.escapeHandler);
+                this.escapeHandler = null;
+            }
         }
     }
     

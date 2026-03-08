@@ -254,6 +254,47 @@ body {
     flex-wrap: wrap;
 }
 
+/* Fullscreen mode */
+.rhythm-view-container.fullscreen-mode {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    margin: 0;
+    border-radius: 0;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+}
+
+.rhythm-view-container.fullscreen-mode .rhythm-view {
+    max-width: 100%;
+    max-height: 100%;
+    overflow: auto;
+}
+
+.fullscreen-exit-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.fullscreen-exit-btn:hover {
+    background: var(--accent-hover);
+}
+
 .rhythm-view {
     min-height: calc(var(--unit-height) + var(--view-padding) * 2);
     position: relative;
