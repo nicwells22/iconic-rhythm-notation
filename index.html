@@ -43,19 +43,25 @@
                 <label for="preClickCount">Count-in: <span id="preClickValue">4</span></label>
                 <input type="range" id="preClickCount" min="0" max="8" value="4">
             </div>
+            <label class="metronome-toggle">
+                <input type="checkbox" id="metronomeToggle" checked>
+                Metronome
+            </label>
         </section>
 
         <!-- Main Rhythm View -->
+        <section class="rhythm-view-controls">
+            <label class="wrap-toggle">
+                <input type="checkbox" id="wrapToggle">
+                Wrap blocks
+            </label>
+        </section>
         <section class="rhythm-view-container">
             <div class="rhythm-view" id="rhythmView">
-                <svg id="rhythmSvg" width="100%" height="200">
-                    <!-- Playhead -->
-                    <line id="playhead" x1="0" y1="0" x2="0" y2="200" stroke="#ff4444" stroke-width="2" />
-                    <!-- Blocks will be rendered here -->
-                    <g id="blocksGroup"></g>
-                    <!-- Dash grid -->
-                    <g id="dashGrid"></g>
-                </svg>
+                <div class="playhead" id="playhead"></div>
+                <div class="rhythm-grid" id="rhythmGrid">
+                    <!-- Units (blocks + dashes) will be rendered here -->
+                </div>
             </div>
         </section>
 

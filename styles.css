@@ -187,32 +187,120 @@ body {
     accent-color: var(--accent);
 }
 
+.metronome-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.metronome-toggle input {
+    accent-color: var(--accent);
+}
+
+/* Rhythm View Controls */
+.rhythm-view-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 20px;
+    background: var(--bg-secondary);
+    border-radius: 10px 10px 0 0;
+    margin-bottom: 0;
+}
+
+.wrap-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.wrap-toggle input {
+    accent-color: var(--accent);
+}
+
 /* Rhythm View */
 .rhythm-view-container {
     background: var(--bg-secondary);
-    border-radius: 10px;
+    border-radius: 0 0 10px 10px;
     padding: 20px;
     margin-bottom: 20px;
     overflow-x: auto;
 }
 
+.rhythm-view-container.wrap-mode {
+    overflow-x: visible;
+}
+
+.rhythm-view-container.wrap-mode .rhythm-grid {
+    flex-wrap: wrap;
+}
+
 .rhythm-view {
-    min-height: 200px;
+    min-height: 100px;
     position: relative;
     background: var(--bg-primary);
     border-radius: 8px;
-    overflow: hidden;
+    padding: 20px;
 }
 
-#rhythmSvg {
-    display: block;
-    min-width: 100%;
+/* Div-based Rhythm Grid */
+.rhythm-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    position: relative;
 }
 
-/* SVG Block Styles */
+/* Playhead */
+.playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff4444;
+    z-index: 10;
+    pointer-events: none;
+    left: 20px;
+}
+
+/* Unit container (holds either a block segment or a dash) */
+.rhythm-unit {
+    width: 56px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.rhythm-unit.measure-start::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--text-secondary);
+}
+
+/* Block element */
 .rhythm-block {
+    height: 60px;
+    border-radius: 6px;
     cursor: move;
-    transition: filter 0.1s ease;
+    transition: filter 0.1s ease, box-shadow 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    user-select: none;
 }
 
 .rhythm-block:hover {
@@ -220,28 +308,47 @@ body {
 }
 
 .rhythm-block.selected {
-    stroke: white;
-    stroke-width: 2;
+    box-shadow: 0 0 0 3px white;
 }
 
+.rhythm-block.block-start {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.rhythm-block.block-end {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.rhythm-block.block-middle {
+    border-radius: 0;
+}
+
+/* Resize handle on block */
 .block-resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
     cursor: ew-resize;
-    fill: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 0 6px 6px 0;
 }
 
 .block-resize-handle:hover {
-    fill: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.6);
 }
 
-/* Dash Grid */
-.grid-dash {
-    stroke: var(--grid-line);
-    stroke-width: 3;
-}
-
-.measure-line {
-    stroke: var(--text-secondary);
-    stroke-width: 2;
+/* Dash element */
+.rhythm-dash {
+    width: 100%;
+    height: 4px;
+    background: var(--grid-line);
+    border-radius: 2px;
+    margin-top: 28px;
+    cursor: pointer;
 }
 
 /* Editor Panel */
