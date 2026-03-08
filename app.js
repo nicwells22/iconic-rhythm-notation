@@ -3,11 +3,12 @@
 class RhythmBlocks {
     constructor() {
         // Configuration
-        this.unitWidth = 56;
-        this.unitGap = 4;
+        this.unitWidth = 60;
+        this.unitGap = 0;
         this.blockHeight = 60;
         this.unitsPerMeasure = 16;
         this.totalUnits = 12;
+        this.pickupOffset = 0;
         
         // State
         this.blocks = [];
@@ -261,6 +262,11 @@ class RhythmBlocks {
             this.render();
         });
         
+        document.getElementById('pickupOffset').addEventListener('change', (e) => {
+            this.pickupOffset = parseInt(e.target.value) || 0;
+            this.render();
+        });
+        
         // Keyboard events for delete
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
         
@@ -459,15 +465,23 @@ class RhythmBlocks {
             unitEl.className = 'rhythm-unit';
             unitEl.dataset.unit = i;
             
-            // Add measure start marker
-            if (showMeasures && i % this.unitsPerMeasure === 0) {
+            // Add measure start marker (accounting for pickup offset)
+            // Measure lines appear at positions: pickupOffset, pickupOffset + unitsPerMeasure, etc.
+            const adjustedPosition = i - this.pickupOffset;
+            if (showMeasures && adjustedPosition >= 0 && adjustedPosition % this.unitsPerMeasure === 0) {
                 unitEl.classList.add('measure-start');
             }
+            
+            // Always add dash (beneath blocks)
+            const dashEl = document.createElement('div');
+            dashEl.className = 'rhythm-dash';
+            unitEl.appendChild(dashEl);
             
             const blockInfo = unitBlockMap.get(i);
             
             if (blockInfo) {
                 // This unit is part of a block
+                unitEl.classList.add('has-block');
                 const { block, isStart, isEnd } = blockInfo;
                 const colorKey = this.getColorKey(block.length);
                 const color = palette[colorKey] || palette[1];
@@ -507,11 +521,6 @@ class RhythmBlocks {
                 }
                 
                 unitEl.appendChild(blockEl);
-            } else {
-                // Empty unit - show dash
-                const dashEl = document.createElement('div');
-                dashEl.className = 'rhythm-dash';
-                unitEl.appendChild(dashEl);
             }
             
             this.rhythmGrid.appendChild(unitEl);
@@ -702,13 +711,33 @@ class RhythmBlocks {
     }
     
     updatePlayhead() {
-        // Calculate playhead position based on unit width + gap
         const unitTotalWidth = this.unitWidth + this.unitGap;
-        const x = 20 + this.playheadPosition * unitTotalWidth; // 20px padding
-        this.playhead.style.left = x + 'px';
+        const currentUnit = Math.floor(this.playheadPosition);
+        const unitFraction = this.playheadPosition - currentUnit;
         
-        // Auto-scroll to keep playhead visible (only in non-wrap mode)
-        if (!this.wrapMode) {
+        if (this.wrapMode) {
+            // In wrap mode, find the actual position of the current unit element
+            const unitEl = this.rhythmGrid.querySelector(`[data-unit="${currentUnit}"]`);
+            if (unitEl) {
+                const gridRect = this.rhythmGrid.getBoundingClientRect();
+                const unitRect = unitEl.getBoundingClientRect();
+                
+                // Position playhead relative to the rhythm grid
+                const x = unitRect.left - gridRect.left + (unitFraction * unitTotalWidth);
+                const y = unitRect.top - gridRect.top;
+                
+                this.playhead.style.left = x + 'px';
+                this.playhead.style.top = y + 'px';
+                this.playhead.style.height = '80px'; // Match unit height
+            }
+        } else {
+            // In scroll mode, use linear calculation
+            const x = this.playheadPosition * unitTotalWidth;
+            this.playhead.style.left = x + 'px';
+            this.playhead.style.top = '0';
+            this.playhead.style.height = '100%';
+            
+            // Auto-scroll to keep playhead visible
             const container = document.querySelector('.rhythm-view-container');
             if (container) {
                 const containerWidth = container.clientWidth;
@@ -726,8 +755,8 @@ class RhythmBlocks {
     generateExportSvg() {
         const showMeasures = document.getElementById('showMeasures').checked;
         const palette = this.palettes[this.currentPalette];
-        const unitWidth = 56;
-        const gap = 4;
+        const unitWidth = this.unitWidth;
+        const gap = this.unitGap;
         const blockHeight = 60;
         const padding = 20;
         const totalWidth = this.totalUnits * (unitWidth + gap) + padding * 2;

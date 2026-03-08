@@ -253,7 +253,6 @@ body {
 .rhythm-grid {
     display: flex;
     flex-wrap: nowrap;
-    gap: 4px;
     position: relative;
 }
 
@@ -269,15 +268,17 @@ body {
     left: 20px;
 }
 
-/* Unit container (holds either a block segment or a dash) */
+/* Unit container (holds both dash and optional block) */
 .rhythm-unit {
-    width: 56px;
+    width: 60px;
     height: 80px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end;
     flex-shrink: 0;
     position: relative;
+    padding-bottom: 8px;
 }
 
 .rhythm-unit.measure-start::before {
@@ -341,14 +342,22 @@ body {
     background: rgba(255, 255, 255, 0.6);
 }
 
-/* Dash element */
+/* Dash element - always at bottom */
 .rhythm-dash {
-    width: 100%;
+    width: 52px;
     height: 4px;
     background: var(--grid-line);
     border-radius: 2px;
-    margin-top: 28px;
     cursor: pointer;
+    order: 2;
+}
+
+/* Block element positioned above dash */
+.rhythm-unit .rhythm-block {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
 }
 
 /* Editor Panel */
