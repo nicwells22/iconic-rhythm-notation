@@ -267,6 +267,13 @@ class RhythmBlocks {
             this.render();
         });
         
+        // Unit size slider
+        document.getElementById('unitSize').addEventListener('input', (e) => {
+            const size = parseInt(e.target.value);
+            this.setUnitSize(size);
+            document.getElementById('unitSizeValue').textContent = size;
+        });
+        
         // Keyboard events for delete
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
         
@@ -300,6 +307,12 @@ class RhythmBlocks {
             container.classList.remove('wrap-mode');
             rhythmView.classList.remove('wrap-mode');
         }
+    }
+    
+    setUnitSize(size) {
+        this.unitWidth = size;
+        // Update CSS custom property (only width scales, height stays constant)
+        document.documentElement.style.setProperty('--unit-width', size + 'px');
     }
     
     handleKeyDown(e) {
@@ -727,7 +740,7 @@ class RhythmBlocks {
                 
                 this.playhead.style.left = x + 'px';
                 this.playhead.style.top = y + 'px';
-                this.playhead.style.height = '130px'; // Match unit height
+                this.playhead.style.height = '130px'; // Match fixed unit height
             }
         } else {
             // In scroll mode, use linear calculation
