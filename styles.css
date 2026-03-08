@@ -360,6 +360,20 @@ body {
     right: 0;
 }
 
+/* Align block edges with dash edges (dash is 88px in 100px unit = 6px margin each side) */
+.rhythm-unit .rhythm-block.block-start {
+    left: 6px;
+}
+
+.rhythm-unit .rhythm-block.block-end {
+    right: 6px;
+}
+
+.rhythm-unit .rhythm-block.block-start.block-end {
+    left: 6px;
+    right: 6px;
+}
+
 /* Editor Panel */
 .editor-panel {
     display: grid;

@@ -491,7 +491,6 @@ class RhythmBlocks {
                 blockEl.className = 'rhythm-block';
                 blockEl.dataset.blockId = block.id;
                 blockEl.style.backgroundColor = color;
-                blockEl.style.width = '100%';
                 
                 if (isSelected) {
                     blockEl.classList.add('selected');
