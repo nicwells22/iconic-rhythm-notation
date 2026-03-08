@@ -3,9 +3,9 @@
 class RhythmBlocks {
     constructor() {
         // Configuration
-        this.unitWidth = 60;
+        this.unitWidth = 100;
         this.unitGap = 0;
-        this.blockHeight = 60;
+        this.blockHeight = 100;
         this.unitsPerMeasure = 16;
         this.totalUnits = 12;
         this.pickupOffset = 0;
@@ -728,7 +728,7 @@ class RhythmBlocks {
                 
                 this.playhead.style.left = x + 'px';
                 this.playhead.style.top = y + 'px';
-                this.playhead.style.height = '80px'; // Match unit height
+                this.playhead.style.height = '130px'; // Match unit height
             }
         } else {
             // In scroll mode, use linear calculation
