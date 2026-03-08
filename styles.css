@@ -254,6 +254,7 @@ body {
     display: flex;
     flex-wrap: nowrap;
     position: relative;
+    row-gap: 65px;
 }
 
 /* Playhead */
