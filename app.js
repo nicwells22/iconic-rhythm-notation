@@ -33,6 +33,10 @@ class RhythmBlocks {
         this.lastMetronomeUnit = -1;
         this.metronomeEnabled = true;
         this.wrapMode = false;
+        this.pitchEnabled = false;
+        this.isFullscreen = false;
+        this.minPitch = 1;
+        this.maxPitch = 7;
         
         // Color palettes
         this.palettes = {
@@ -274,6 +278,13 @@ class RhythmBlocks {
             document.getElementById('unitSizeValue').textContent = size;
         });
         
+        // Unit height slider
+        document.getElementById('unitHeight').addEventListener('input', (e) => {
+            const height = parseInt(e.target.value);
+            this.setUnitHeight(height);
+            document.getElementById('unitHeightValue').textContent = height;
+        });
+        
         // Keyboard events for delete
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
         
@@ -298,6 +309,23 @@ class RhythmBlocks {
         // Fullscreen toggle
         document.getElementById('fullscreenBtn').addEventListener('click', () => {
             this.toggleFullscreen();
+        });
+        
+        // Pitch toggle
+        document.getElementById('pitchToggle').addEventListener('change', (e) => {
+            this.pitchEnabled = e.target.checked;
+            document.getElementById('pitchInputGroup').style.display = this.pitchEnabled ? 'block' : 'none';
+            document.getElementById('rhythmView').classList.toggle('pitch-mode', this.pitchEnabled);
+            if (this.pitchEnabled) {
+                this.updatePitchRange();
+            }
+            this.render();
+        });
+        
+        // Apply pitches button
+        document.getElementById('applyPitchBtn').addEventListener('click', () => this.applyPitches());
+        document.getElementById('pitchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.applyPitches();
         });
     }
     
@@ -347,8 +375,80 @@ class RhythmBlocks {
     
     setUnitSize(size) {
         this.unitWidth = size;
-        // Update CSS custom property (only width scales, height stays constant)
+        // Update CSS custom property
         document.documentElement.style.setProperty('--unit-width', size + 'px');
+    }
+    
+    setUnitHeight(height) {
+        this.blockHeight = height;
+        // Update CSS custom property
+        document.documentElement.style.setProperty('--block-height', height + 'px');
+        // Recalculate pitch container if pitch mode is enabled
+        if (this.pitchEnabled) {
+            this.updatePitchRange();
+            this.render();
+        }
+    }
+    
+    parsePitch(pitchStr) {
+        // Parse pitch string like "1", "+1", "++3", "-5", "--2"
+        // Returns absolute pitch value where base octave (no modifier) is 1-7
+        // + adds 7, ++ adds 14, - subtracts 7, -- subtracts 14, etc.
+        const trimmed = pitchStr.trim();
+        let octaveOffset = 0;
+        let numStr = trimmed;
+        
+        // Count leading + or - signs
+        const plusMatch = trimmed.match(/^(\++)/);
+        const minusMatch = trimmed.match(/^(-+)/);
+        
+        if (plusMatch) {
+            octaveOffset = plusMatch[1].length * 7;
+            numStr = trimmed.slice(plusMatch[1].length);
+        } else if (minusMatch) {
+            octaveOffset = -minusMatch[1].length * 7;
+            numStr = trimmed.slice(minusMatch[1].length);
+        }
+        
+        const baseNum = parseInt(numStr);
+        if (isNaN(baseNum) || baseNum < 1 || baseNum > 7) return null;
+        
+        return baseNum + octaveOffset;
+    }
+    
+    applyPitches() {
+        const input = document.getElementById('pitchInput').value;
+        const pitches = input.split(',').map(s => this.parsePitch(s)).filter(p => p !== null);
+        
+        if (pitches.length === 0) return;
+        
+        // Apply pitches to existing blocks in order
+        this.blocks.forEach((block, index) => {
+            if (index < pitches.length) {
+                block.pitch = pitches[index];
+            }
+        });
+        
+        this.updatePitchRange();
+        this.render();
+    }
+    
+    updatePitchRange() {
+        // Calculate min and max pitch from all blocks
+        if (this.blocks.length === 0) {
+            this.minPitch = 1;
+            this.maxPitch = 7;
+            return;
+        }
+        
+        const pitches = this.blocks.map(b => b.pitch || 4);
+        this.minPitch = Math.min(...pitches);
+        this.maxPitch = Math.max(...pitches);
+        
+        // Update CSS for dynamic height (use current block height + 10px padding per level)
+        const pitchRange = this.maxPitch - this.minPitch + 1;
+        const containerHeight = pitchRange * (this.blockHeight + 10);
+        document.documentElement.style.setProperty('--pitch-container-height', containerHeight + 'px');
     }
     
     handleKeyDown(e) {
@@ -464,11 +564,12 @@ class RhythmBlocks {
         }
     }
     
-    addBlock(start, length) {
+    addBlock(start, length, pitch = 4) {
         const block = {
             id: Date.now(),
             start: start,
-            length: length
+            length: length,
+            pitch: pitch  // 1-7, default middle (4)
         };
         this.blocks.push(block);
         this.render();
@@ -540,6 +641,14 @@ class RhythmBlocks {
                 blockEl.className = 'rhythm-block';
                 blockEl.dataset.blockId = block.id;
                 blockEl.style.backgroundColor = color;
+                
+                // Apply pitch positioning if enabled
+                if (this.pitchEnabled && block.pitch !== undefined) {
+                    // Position relative to maxPitch (highest pitch at top)
+                    // maxPitch is at top (0), lower pitches are below
+                    const pitchOffset = (this.maxPitch - block.pitch) * (this.blockHeight + 10);
+                    blockEl.style.top = pitchOffset + 'px';
+                }
                 
                 if (isSelected) {
                     blockEl.classList.add('selected');

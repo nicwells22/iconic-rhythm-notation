@@ -6,18 +6,23 @@
 }
 
 :root {
-    /* Unit width - will be overridden by JS */
+    /* Unit dimensions - will be overridden by JS */
     --unit-width: 100px;
-    
-    /* Fixed heights (don't scale with width) */
-    --unit-height: 130px;
     --block-height: 100px;
+    
+    /* Derived unit height (block + padding) */
+    --unit-height: calc(var(--block-height) + 30px);
+    
+    /* Fixed values */
     --dash-height: 6px;
     --block-radius: 10px;
     --row-gap: 65px;
     --view-padding: 30px;
     --playhead-width: 4px;
     --measure-line-width: 4px;
+    
+    /* Pitch container height - will be overridden by JS based on pitch range */
+    --pitch-container-height: calc(var(--block-height) + 30px);
     
     /* Width-related values (scale with unit width) */
     --dash-width: calc(var(--unit-width) * 0.88);
@@ -303,6 +308,21 @@ body {
     padding: var(--view-padding);
 }
 
+/* Pitch mode - dynamic height based on pitch range */
+.rhythm-view.pitch-mode {
+    min-height: calc(var(--pitch-container-height) + var(--view-padding) * 2);
+}
+
+.rhythm-view.pitch-mode .rhythm-unit {
+    height: var(--pitch-container-height);
+    justify-content: flex-start; /* Blocks position from top in pitch mode */
+}
+
+.rhythm-view.pitch-mode .rhythm-dash {
+    position: absolute;
+    bottom: 12px;
+}
+
 /* Div-based Rhythm Grid */
 .rhythm-grid {
     display: flex;
@@ -542,6 +562,34 @@ body {
 }
 
 .numeric-input-group input:focus {
+    outline: 2px solid var(--accent);
+}
+
+/* Pitch Input Group */
+.pitch-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.pitch-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pitch-input-group input {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.pitch-input-group input:focus {
     outline: 2px solid var(--accent);
 }
 
