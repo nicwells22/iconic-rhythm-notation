@@ -271,18 +271,40 @@ class RhythmBlocks {
             this.render();
         });
         
-        // Unit size slider
-        document.getElementById('unitSize').addEventListener('input', (e) => {
+        // Unit width controls (slider + input synced)
+        const unitSizeSlider = document.getElementById('unitSizeSlider');
+        const unitSizeInput = document.getElementById('unitSizeInput');
+        
+        unitSizeSlider.addEventListener('input', (e) => {
             const size = parseInt(e.target.value);
             this.setUnitSize(size);
-            document.getElementById('unitSizeValue').textContent = size;
+            unitSizeInput.value = size;
         });
         
-        // Unit height slider
-        document.getElementById('unitHeight').addEventListener('input', (e) => {
+        unitSizeInput.addEventListener('input', (e) => {
+            let size = parseInt(e.target.value);
+            if (!isNaN(size) && size >= 10) {
+                this.setUnitSize(size);
+                unitSizeSlider.value = Math.min(Math.max(size, 40), 200);
+            }
+        });
+        
+        // Unit height controls (slider + input synced)
+        const unitHeightSlider = document.getElementById('unitHeightSlider');
+        const unitHeightInput = document.getElementById('unitHeightInput');
+        
+        unitHeightSlider.addEventListener('input', (e) => {
             const height = parseInt(e.target.value);
             this.setUnitHeight(height);
-            document.getElementById('unitHeightValue').textContent = height;
+            unitHeightInput.value = height;
+        });
+        
+        unitHeightInput.addEventListener('input', (e) => {
+            let height = parseInt(e.target.value);
+            if (!isNaN(height) && height >= 10) {
+                this.setUnitHeight(height);
+                unitHeightSlider.value = Math.min(Math.max(height, 40), 200);
+            }
         });
         
         // Keyboard events for delete

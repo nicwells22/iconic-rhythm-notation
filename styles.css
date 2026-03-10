@@ -636,6 +636,16 @@ body {
     text-align: center;
 }
 
+.grid-settings input[type="number"].size-input {
+    width: 55px;
+    margin-left: 8px;
+}
+
+.grid-settings input[type="range"] {
+    flex: 1;
+    min-width: 80px;
+}
+
 .grid-settings input[type="checkbox"] {
     accent-color: var(--accent);
 }
