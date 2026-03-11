@@ -542,6 +542,24 @@ class RhythmBlocks {
             this.removeBlock(this.selectedBlockId);
             this.selectedBlockId = null;
         }
+        
+        // Arrow keys to adjust pitch of selected block
+        if (this.pitchEnabled && this.selectedBlockId !== null) {
+            const block = this.blocks.find(b => b.id === this.selectedBlockId);
+            if (block) {
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    block.pitch = (block.pitch || 4) + 1;
+                    this.updatePitchRange();
+                    this.render();
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    block.pitch = (block.pitch || 4) - 1;
+                    this.updatePitchRange();
+                    this.render();
+                }
+            }
+        }
     }
     
     selectBlock(blockId) {
