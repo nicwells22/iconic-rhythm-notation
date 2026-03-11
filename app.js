@@ -32,7 +32,7 @@ class RhythmBlocks {
         this.countInPosition = 0;
         this.lastMetronomeUnit = -1;
         this.metronomeEnabled = true;
-        this.wrapMode = false;
+        this.wrapMode = true;
         this.pitchEnabled = false;
         this.isFullscreen = false;
         this.minPitch = 1;
@@ -102,6 +102,7 @@ class RhythmBlocks {
         this.applyTheme();
         this.initAudio();
         this.bindEvents();
+        this.applyWrapMode(); // Apply default wrap mode
         this.render();
     }
     
@@ -930,16 +931,35 @@ class RhythmBlocks {
         }
     }
     
-    // Export methods - generate SVG from current div-based layout
+    // Export methods - generate SVG from current div-based layout with wrapping
     generateExportSvg() {
         const showMeasures = document.getElementById('showMeasures').checked;
         const palette = this.palettes[this.currentPalette];
         const unitWidth = this.unitWidth;
-        const gap = this.unitGap;
-        const blockHeight = 60;
-        const padding = 20;
-        const totalWidth = this.totalUnits * (unitWidth + gap) + padding * 2;
-        const totalHeight = blockHeight + padding * 2;
+        const blockHeight = this.blockHeight;
+        const padding = 30;
+        const dashHeight = 6;
+        const rowGap = 65;
+        const blockRadius = 10;
+        const blockPadding = unitWidth * 0.06;
+        const dashWidth = unitWidth * 0.88;
+        const measureLineWidth = 4;
+        
+        // Calculate units per row based on unitsPerMeasure (wrap at measure boundaries)
+        const unitsPerRow = this.unitsPerMeasure;
+        const numRows = Math.ceil(this.totalUnits / unitsPerRow);
+        
+        // Calculate pitch dimensions if pitch mode is enabled
+        let pitchLevels = 1;
+        let unitHeight = blockHeight + 30;
+        if (this.pitchEnabled && this.blocks.length > 0) {
+            pitchLevels = this.maxPitch - this.minPitch + 1;
+            unitHeight = pitchLevels * (blockHeight + 10);
+        }
+        
+        const rowHeight = unitHeight + rowGap;
+        const totalWidth = unitsPerRow * unitWidth + padding * 2;
+        const totalHeight = numRows * rowHeight - rowGap + padding * 2;
         
         let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${totalHeight}">`;
         svgContent += `<rect width="100%" height="100%" fill="#ffffff"/>`;
@@ -954,27 +974,71 @@ class RhythmBlocks {
             }
         });
         
-        // Render each unit
+        // Render each unit with wrapping
         for (let i = 0; i < this.totalUnits; i++) {
-            const x = padding + i * (unitWidth + gap);
+            const row = Math.floor(i / unitsPerRow);
+            const col = i % unitsPerRow;
+            const x = padding + col * unitWidth;
+            const rowY = padding + row * rowHeight;
+            
             const blockInfo = unitBlockMap.get(i);
             
-            // Measure line
-            if (showMeasures && i % this.unitsPerMeasure === 0) {
-                svgContent += `<line x1="${x}" y1="0" x2="${x}" y2="${totalHeight}" stroke="#666666" stroke-width="2"/>`;
+            // Measure line (accounting for pickup offset)
+            const adjustedPosition = i - this.pickupOffset;
+            if (showMeasures && adjustedPosition >= 0 && adjustedPosition % this.unitsPerMeasure === 0) {
+                svgContent += `<line x1="${x}" y1="${rowY}" x2="${x}" y2="${rowY + unitHeight}" stroke="#666666" stroke-width="${measureLineWidth}"/>`;
             }
             
+            // Dash - always rendered at bottom of unit
+            const dashX = x + (unitWidth - dashWidth) / 2;
+            const dashY = rowY + unitHeight - 12 - dashHeight / 2;
+            svgContent += `<line x1="${dashX}" y1="${dashY}" x2="${dashX + dashWidth}" y2="${dashY}" stroke="#cccccc" stroke-width="${dashHeight}" stroke-linecap="round"/>`;
+            
+            // Block
             if (blockInfo) {
                 const { block, isStart, isEnd } = blockInfo;
                 const colorKey = this.getColorKey(block.length);
                 const color = palette[colorKey] || palette[1];
-                const rx = 6;
                 
-                svgContent += `<rect x="${x}" y="${padding}" width="${unitWidth}" height="${blockHeight}" fill="${color}" rx="${isStart ? rx : 0}" ry="${isEnd ? rx : 0}"/>`;
-            } else {
-                // Dash
-                const dashY = padding + blockHeight / 2;
-                svgContent += `<line x1="${x}" y1="${dashY}" x2="${x + unitWidth}" y2="${dashY}" stroke="#cccccc" stroke-width="4" stroke-linecap="round"/>`;
+                // Calculate block position
+                let blockX = x;
+                let blockW = unitWidth;
+                
+                // Apply padding for start/end
+                if (isStart) {
+                    blockX += blockPadding;
+                    blockW -= blockPadding;
+                }
+                if (isEnd) {
+                    blockW -= blockPadding;
+                }
+                
+                // Calculate vertical position
+                let blockY = rowY;
+                if (this.pitchEnabled && block.pitch !== undefined) {
+                    const pitchOffset = (this.maxPitch - block.pitch) * (blockHeight + 10);
+                    blockY = rowY + pitchOffset;
+                }
+                
+                // Determine corner radii
+                const tlRadius = isStart ? blockRadius : 0;
+                const trRadius = isEnd ? blockRadius : 0;
+                const brRadius = isEnd ? blockRadius : 0;
+                const blRadius = isStart ? blockRadius : 0;
+                
+                // Create path for rounded rectangle with selective corners
+                const path = `M ${blockX + tlRadius} ${blockY}
+                    L ${blockX + blockW - trRadius} ${blockY}
+                    Q ${blockX + blockW} ${blockY} ${blockX + blockW} ${blockY + trRadius}
+                    L ${blockX + blockW} ${blockY + blockHeight - brRadius}
+                    Q ${blockX + blockW} ${blockY + blockHeight} ${blockX + blockW - brRadius} ${blockY + blockHeight}
+                    L ${blockX + blRadius} ${blockY + blockHeight}
+                    Q ${blockX} ${blockY + blockHeight} ${blockX} ${blockY + blockHeight - blRadius}
+                    L ${blockX} ${blockY + tlRadius}
+                    Q ${blockX} ${blockY} ${blockX + tlRadius} ${blockY}
+                    Z`;
+                
+                svgContent += `<path d="${path}" fill="${color}"/>`;
             }
         }
         
