@@ -40,11 +40,11 @@
                 Loop
             </label>
             <div class="preclick-control">
-                <label for="preClickCount">Count-in: <span id="preClickValue">4</span></label>
-                <input type="range" id="preClickCount" min="0" max="8" value="4">
+                <label for="preClickCount">Count-in: <span id="preClickValue">0</span></label>
+                <input type="range" id="preClickCount" min="0" max="8" value="0">
             </div>
             <label class="metronome-toggle">
-                <input type="checkbox" id="metronomeToggle" checked>
+                <input type="checkbox" id="metronomeToggle">
                 Metronome
             </label>
         </section>
@@ -118,6 +118,17 @@
                     <p class="hint">Enter pitches 1-7 with +/- for octaves (e.g., 1, +3, 5, -2, ++1)</p>
                     <input type="text" id="pitchInput" placeholder="1, +3, 5, -2, ++1">
                     <button id="applyPitchBtn" class="btn">Apply Pitches</button>
+                    <label class="instrument-label">
+                        Instrument:
+                        <select id="instrumentSelect">
+                            <option value="steelDrum">Steel Drum</option>
+                            <option value="piano">Piano</option>
+                            <option value="marimba">Marimba</option>
+                            <option value="bells">Bells</option>
+                            <option value="synth">Synth</option>
+                            <option value="click">Click (no pitch)</option>
+                        </select>
+                    </label>
                 </div>
             </div>
 

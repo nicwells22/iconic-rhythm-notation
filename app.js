@@ -27,17 +27,18 @@ class RhythmBlocks {
         this.loop = false;
         this.animationId = null;
         this.lastTimestamp = null;
-        this.preClickCount = 4;
+        this.preClickCount = 0;
         this.isCountingIn = false;
         this.countInPosition = 0;
         this.lastMetronomeUnit = -1;
-        this.metronomeEnabled = true;
+        this.metronomeEnabled = false;
         this.wrapMode = true;
         this.pitchEnabled = false;
         this.lyricsEnabled = false;
         this.isFullscreen = false;
         this.minPitch = 1;
         this.maxPitch = 7;
+        this.instrument = 'steelDrum';
         
         // Color palettes
         this.palettes = {
@@ -144,9 +145,225 @@ class RhythmBlocks {
         this.playClick(400, 0.03);
     }
     
-    playBlockClick() {
-        // Higher pitch for block hits
-        this.playClick(800, 0.08);
+    playBlockClick(block = null) {
+        // If pitch mode is enabled and block has pitch, play pitched note
+        if (this.pitchEnabled && block && block.pitch !== undefined && this.instrument !== 'click') {
+            this.playPitchedNote(block.pitch);
+        } else {
+            // Default click sound
+            this.playClick(800, 0.08);
+        }
+    }
+    
+    // Convert pitch number to frequency (C major scale, middle C = pitch 1)
+    pitchToFrequency(pitch) {
+        // Map pitch 1-7 to C major scale degrees
+        // Pitch 1 = C4 (261.63 Hz), 2 = D4, 3 = E4, 4 = F4, 5 = G4, 6 = A4, 7 = B4
+        const baseFrequencies = {
+            1: 261.63,  // C4
+            2: 293.66,  // D4
+            3: 329.63,  // E4
+            4: 349.23,  // F4
+            5: 392.00,  // G4
+            6: 440.00,  // A4
+            7: 493.88   // B4
+        };
+        
+        // Handle octave shifts
+        let octaveShift = 0;
+        let basePitch = pitch;
+        
+        if (pitch > 7) {
+            octaveShift = Math.floor((pitch - 1) / 7);
+            basePitch = ((pitch - 1) % 7) + 1;
+        } else if (pitch < 1) {
+            octaveShift = Math.floor((pitch - 1) / 7);
+            basePitch = ((((pitch - 1) % 7) + 7) % 7) + 1;
+        }
+        
+        const baseFreq = baseFrequencies[basePitch] || 261.63;
+        return baseFreq * Math.pow(2, octaveShift);
+    }
+    
+    playPitchedNote(pitch) {
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const frequency = this.pitchToFrequency(pitch);
+        const now = this.audioContext.currentTime;
+        
+        switch (this.instrument) {
+            case 'steelDrum':
+                this.playSteelDrum(frequency, now);
+                break;
+            case 'piano':
+                this.playPiano(frequency, now);
+                break;
+            case 'marimba':
+                this.playMarimba(frequency, now);
+                break;
+            case 'bells':
+                this.playBells(frequency, now);
+                break;
+            case 'synth':
+                this.playSynth(frequency, now);
+                break;
+            default:
+                this.playClick(800, 0.08);
+        }
+    }
+    
+    playSteelDrum(frequency, now) {
+        // Steel drum: bright, metallic sound with harmonics
+        const duration = 0.6;
+        
+        // Main tone
+        const osc1 = this.audioContext.createOscillator();
+        const gain1 = this.audioContext.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.value = frequency;
+        gain1.gain.setValueAtTime(0.4, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        osc1.connect(gain1);
+        gain1.connect(this.audioContext.destination);
+        
+        // Harmonic overtone (characteristic of steel drum)
+        const osc2 = this.audioContext.createOscillator();
+        const gain2 = this.audioContext.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.value = frequency * 2;
+        gain2.gain.setValueAtTime(0.2, now);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.5);
+        osc2.connect(gain2);
+        gain2.connect(this.audioContext.destination);
+        
+        // Third harmonic
+        const osc3 = this.audioContext.createOscillator();
+        const gain3 = this.audioContext.createGain();
+        osc3.type = 'sine';
+        osc3.frequency.value = frequency * 3;
+        gain3.gain.setValueAtTime(0.1, now);
+        gain3.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.3);
+        osc3.connect(gain3);
+        gain3.connect(this.audioContext.destination);
+        
+        osc1.start(now);
+        osc1.stop(now + duration);
+        osc2.start(now);
+        osc2.stop(now + duration * 0.5);
+        osc3.start(now);
+        osc3.stop(now + duration * 0.3);
+    }
+    
+    playPiano(frequency, now) {
+        // Piano: quick attack, longer decay with harmonics
+        const duration = 0.8;
+        
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = frequency;
+        
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+    
+    playMarimba(frequency, now) {
+        // Marimba: warm, wooden tone with quick decay
+        const duration = 0.4;
+        
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = frequency;
+        
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        
+        // Add slight pitch bend for wooden character
+        osc.frequency.setValueAtTime(frequency * 1.02, now);
+        osc.frequency.exponentialRampToValueAtTime(frequency, now + 0.02);
+        
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+    
+    playBells(frequency, now) {
+        // Bells: bright, ringing with multiple harmonics
+        const duration = 1.2;
+        
+        const osc1 = this.audioContext.createOscillator();
+        const gain1 = this.audioContext.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.value = frequency;
+        gain1.gain.setValueAtTime(0.3, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        osc1.connect(gain1);
+        gain1.connect(this.audioContext.destination);
+        
+        // Bell overtones (inharmonic)
+        const osc2 = this.audioContext.createOscillator();
+        const gain2 = this.audioContext.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.value = frequency * 2.4;
+        gain2.gain.setValueAtTime(0.15, now);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.7);
+        osc2.connect(gain2);
+        gain2.connect(this.audioContext.destination);
+        
+        const osc3 = this.audioContext.createOscillator();
+        const gain3 = this.audioContext.createGain();
+        osc3.type = 'sine';
+        osc3.frequency.value = frequency * 5.4;
+        gain3.gain.setValueAtTime(0.08, now);
+        gain3.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.4);
+        osc3.connect(gain3);
+        gain3.connect(this.audioContext.destination);
+        
+        osc1.start(now);
+        osc1.stop(now + duration);
+        osc2.start(now);
+        osc2.stop(now + duration * 0.7);
+        osc3.start(now);
+        osc3.stop(now + duration * 0.4);
+    }
+    
+    playSynth(frequency, now) {
+        // Synth: sawtooth wave with filter
+        const duration = 0.5;
+        
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        const filter = this.audioContext.createBiquadFilter();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.value = frequency;
+        
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(frequency * 4, now);
+        filter.frequency.exponentialRampToValueAtTime(frequency, now + duration);
+        filter.Q.value = 2;
+        
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.audioContext.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
     }
     
     playCountInClick() {
@@ -357,6 +574,11 @@ class RhythmBlocks {
         document.getElementById('applyPitchBtn').addEventListener('click', () => this.applyPitches());
         document.getElementById('pitchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.applyPitches();
+        });
+        
+        // Instrument selection
+        document.getElementById('instrumentSelect').addEventListener('change', (e) => {
+            this.instrument = e.target.value;
         });
         
         // Lyrics toggle
@@ -965,8 +1187,8 @@ class RhythmBlocks {
             if (prevPosition <= blockStart && this.playheadPosition > blockStart) {
                 if (!this.playedBlocks.has(block.id)) {
                     this.playedBlocks.add(block.id);
-                    // Block click sound
-                    this.playBlockClick();
+                    // Block click sound (pass block for pitched playback)
+                    this.playBlockClick(block);
                 }
             }
         });
