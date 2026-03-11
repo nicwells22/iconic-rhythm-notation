@@ -121,6 +121,25 @@
                 </div>
             </div>
 
+            <!-- Lyrics Settings -->
+            <div class="panel-section">
+                <h3>Lyrics</h3>
+                <label class="lyrics-toggle">
+                    <input type="checkbox" id="lyricsToggle">
+                    Show lyrics
+                </label>
+                <div class="lyrics-input-group" id="lyricsInputGroup" style="display: none;">
+                    <p class="hint">Enter lyrics separated by commas, one per block (e.g., Hel-, -lo, World)</p>
+                    <input type="text" id="lyricsInput" placeholder="Hel-, -lo, World">
+                    <button id="applyLyricsBtn" class="btn">Apply Lyrics</button>
+                    <label class="lyric-size-label">
+                        Lyric size (px):
+                        <input type="range" id="lyricSizeSlider" value="20" min="10" max="40" step="1">
+                        <input type="number" id="lyricSizeInput" value="20" min="8" max="60" class="size-input">
+                    </label>
+                </div>
+            </div>
+
             <!-- Color Palette -->
             <div class="panel-section">
                 <h3>Color Palette</h3>

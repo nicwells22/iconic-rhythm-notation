@@ -9,6 +9,7 @@
     /* Unit dimensions - will be overridden by JS */
     --unit-width: 100px;
     --block-height: 100px;
+    --lyric-font-size: 1.3rem;
     
     /* Derived unit height (block + padding) */
     --unit-height: calc(var(--block-height) + 30px);
@@ -615,6 +616,75 @@ body {
 
 .pitch-input-group input:focus {
     outline: 2px solid var(--accent);
+}
+
+/* Lyrics Settings */
+.lyrics-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.lyrics-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lyrics-input-group input {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.lyrics-input-group input:focus {
+    outline: 2px solid var(--accent);
+}
+
+.lyric-size-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.lyric-size-label input[type="range"] {
+    flex: 1;
+    min-width: 80px;
+}
+
+.lyric-size-label input[type="number"] {
+    width: 55px;
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    text-align: center;
+}
+
+/* Lyrics display above blocks */
+.block-lyric {
+    position: absolute;
+    top: -30px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: var(--lyric-font-size);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.rhythm-view.lyrics-mode .rhythm-unit {
+    margin-top: 34px;
 }
 
 /* Palette Selector */

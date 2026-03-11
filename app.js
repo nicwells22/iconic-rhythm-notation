@@ -34,6 +34,7 @@ class RhythmBlocks {
         this.metronomeEnabled = true;
         this.wrapMode = true;
         this.pitchEnabled = false;
+        this.lyricsEnabled = false;
         this.isFullscreen = false;
         this.minPitch = 1;
         this.maxPitch = 7;
@@ -357,6 +358,38 @@ class RhythmBlocks {
         document.getElementById('pitchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.applyPitches();
         });
+        
+        // Lyrics toggle
+        document.getElementById('lyricsToggle').addEventListener('change', (e) => {
+            this.lyricsEnabled = e.target.checked;
+            document.getElementById('lyricsInputGroup').style.display = this.lyricsEnabled ? 'block' : 'none';
+            document.getElementById('rhythmView').classList.toggle('lyrics-mode', this.lyricsEnabled);
+            this.render();
+        });
+        
+        // Apply lyrics button
+        document.getElementById('applyLyricsBtn').addEventListener('click', () => this.applyLyrics());
+        document.getElementById('lyricsInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.applyLyrics();
+        });
+        
+        // Lyric size controls (slider + input synced)
+        const lyricSizeSlider = document.getElementById('lyricSizeSlider');
+        const lyricSizeInput = document.getElementById('lyricSizeInput');
+        
+        lyricSizeSlider.addEventListener('input', (e) => {
+            const size = parseInt(e.target.value);
+            this.setLyricSize(size);
+            lyricSizeInput.value = size;
+        });
+        
+        lyricSizeInput.addEventListener('input', (e) => {
+            let size = parseInt(e.target.value);
+            if (!isNaN(size) && size >= 8) {
+                this.setLyricSize(size);
+                lyricSizeSlider.value = Math.min(Math.max(size, 10), 40);
+            }
+        });
     }
     
     applyWrapMode() {
@@ -370,6 +403,10 @@ class RhythmBlocks {
             container.classList.remove('wrap-mode');
             rhythmView.classList.remove('wrap-mode');
         }
+    }
+    
+    setLyricSize(size) {
+        document.documentElement.style.setProperty('--lyric-font-size', size + 'px');
     }
     
     toggleFullscreen() {
@@ -460,6 +497,24 @@ class RhythmBlocks {
         });
         
         this.updatePitchRange();
+        this.render();
+    }
+    
+    applyLyrics() {
+        const input = document.getElementById('lyricsInput').value;
+        const lyrics = input.split(',').map(s => s.trim());
+        
+        if (lyrics.length === 0) return;
+        
+        // Apply lyrics to existing blocks in order
+        this.blocks.forEach((block, index) => {
+            if (index < lyrics.length && lyrics[index].length > 0) {
+                block.lyric = lyrics[index];
+            } else {
+                block.lyric = undefined;
+            }
+        });
+        
         this.render();
     }
     
@@ -697,6 +752,14 @@ class RhythmBlocks {
                     blockEl.style.borderBottomLeftRadius = '0';
                 } else {
                     blockEl.classList.add('block-middle');
+                }
+                
+                // Add lyric above block (only on first unit of block)
+                if (this.lyricsEnabled && isStart && block.lyric) {
+                    const lyricEl = document.createElement('div');
+                    lyricEl.className = 'block-lyric';
+                    lyricEl.textContent = block.lyric;
+                    blockEl.appendChild(lyricEl);
                 }
                 
                 // Add resize handle only on the last unit of the block
@@ -1097,14 +1160,15 @@ class RhythmBlocks {
     }
     
     // IRN (Iconic Rhythm Notation) Import/Export
-    // Format: { name, rhythm: ["4", "2", "x", "1"], pitch: ["+1", "3", null, "5"] }
+    // Format: { name, rhythm: ["4", "2", "x", "1"], pitch: ["+1", "3", null, "5"], lyrics: ["Hel-", "-lo", null, "World"] }
     // Blanks: "x" = 1 space, "2x" = 2 spaces, etc.
     exportIrn() {
         const songName = document.getElementById('songName').value || 'Untitled';
         
-        // Build rhythm and pitch arrays from blocks
+        // Build rhythm, pitch, and lyrics arrays from blocks
         const rhythm = [];
         const pitch = [];
+        const lyrics = [];
         let currentPos = 0;
         
         // Sort blocks by start position
@@ -1116,6 +1180,7 @@ class RhythmBlocks {
                 const gap = block.start - currentPos;
                 rhythm.push(gap === 1 ? 'x' : `${gap}x`);
                 pitch.push(null);
+                lyrics.push(null);
             }
             
             // Add the block
@@ -1128,6 +1193,9 @@ class RhythmBlocks {
                 pitch.push(null);
             }
             
+            // Add lyric if present
+            lyrics.push(block.lyric || null);
+            
             currentPos = block.start + block.length;
         });
         
@@ -1136,12 +1204,17 @@ class RhythmBlocks {
             const gap = this.totalUnits - currentPos;
             rhythm.push(gap === 1 ? 'x' : `${gap}x`);
             pitch.push(null);
+            lyrics.push(null);
         }
+        
+        // Check if any lyrics exist
+        const hasLyrics = lyrics.some(l => l !== null);
         
         const irnData = {
             name: songName,
             rhythm: rhythm,
             pitch: this.pitchEnabled ? pitch : undefined,
+            lyrics: hasLyrics ? lyrics : undefined,
             settings: {
                 tempo: this.tempo,
                 unitsPerMeasure: this.unitsPerMeasure,
@@ -1207,12 +1280,13 @@ class RhythmBlocks {
                 }
             }
             
-            // Parse rhythm and pitch arrays
+            // Parse rhythm, pitch, and lyrics arrays
             this.blocks = [];
             let currentPos = 0;
             
             const rhythmArray = irnData.rhythm || [];
             const pitchArray = irnData.pitch || [];
+            const lyricsArray = irnData.lyrics || [];
             
             rhythmArray.forEach((item, index) => {
                 if (item.endsWith('x')) {
@@ -1224,12 +1298,14 @@ class RhythmBlocks {
                     const length = parseInt(item);
                     const pitchStr = pitchArray[index];
                     const pitch = pitchStr ? this.parsePitch(pitchStr) : 4;
+                    const lyric = lyricsArray[index] || undefined;
                     
                     this.blocks.push({
                         id: Date.now() + Math.random(),
                         start: currentPos,
                         length: length,
-                        pitch: pitch
+                        pitch: pitch,
+                        lyric: lyric
                     });
                     
                     currentPos += length;
@@ -1249,6 +1325,14 @@ class RhythmBlocks {
                 document.getElementById('pitchInputGroup').style.display = 'block';
                 document.getElementById('rhythmView').classList.add('pitch-mode');
                 this.updatePitchRange();
+            }
+            
+            // Enable lyrics mode if lyrics data exists
+            if (irnData.lyrics && irnData.lyrics.some(l => l !== null)) {
+                this.lyricsEnabled = true;
+                document.getElementById('lyricsToggle').checked = true;
+                document.getElementById('lyricsInputGroup').style.display = 'block';
+                document.getElementById('rhythmView').classList.add('lyrics-mode');
             }
             
             this.render();
