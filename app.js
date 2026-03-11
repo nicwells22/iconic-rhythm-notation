@@ -1,4 +1,4 @@
-// Rhythm Blocks Application
+// Iconic Rhythm Notation Application
 
 class RhythmBlocks {
     constructor() {
@@ -745,22 +745,32 @@ class RhythmBlocks {
     
     generateFromNumeric() {
         const input = document.getElementById('numericInput').value;
-        const durations = input.split(',')
-            .map(s => parseInt(s.trim()))
-            .filter(n => !isNaN(n) && n > 0);
+        const items = input.split(',').map(s => s.trim()).filter(s => s.length > 0);
         
-        if (durations.length === 0) return;
+        if (items.length === 0) return;
         
         this.blocks = [];
         let currentStart = 0;
         
-        durations.forEach(length => {
-            this.blocks.push({
-                id: Date.now() + Math.random(),
-                start: currentStart,
-                length: length
-            });
-            currentStart += length;
+        items.forEach(item => {
+            if (item.endsWith('x') || item === 'x') {
+                // This is a blank/space: "x" = 1, "3x" = 3, etc.
+                const count = item === 'x' ? 1 : parseInt(item.slice(0, -1));
+                if (!isNaN(count) && count > 0) {
+                    currentStart += count;
+                }
+            } else {
+                // This is a block duration
+                const length = parseInt(item);
+                if (!isNaN(length) && length > 0) {
+                    this.blocks.push({
+                        id: Date.now() + Math.random(),
+                        start: currentStart,
+                        length: length
+                    });
+                    currentStart += length;
+                }
+            }
         });
         
         this.updateTotalUnits();
