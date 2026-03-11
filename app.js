@@ -244,6 +244,13 @@ class RhythmBlocks {
         });
         document.getElementById('midiFileInput').addEventListener('change', (e) => this.importMidi(e));
         
+        // IRN import/export
+        document.getElementById('exportIrnBtn').addEventListener('click', () => this.exportIrn());
+        document.getElementById('importIrnBtn').addEventListener('click', () => {
+            document.getElementById('irnFileInput').click();
+        });
+        document.getElementById('irnFileInput').addEventListener('change', (e) => this.importIrn(e));
+        
         // Color palette selection
         document.querySelectorAll('input[name="palette"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
@@ -1077,6 +1084,172 @@ class RhythmBlocks {
         };
         
         img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    }
+    
+    // IRN (Iconic Rhythm Notation) Import/Export
+    // Format: { name, rhythm: ["4", "2", "x", "1"], pitch: ["+1", "3", null, "5"] }
+    // Blanks: "x" = 1 space, "2x" = 2 spaces, etc.
+    exportIrn() {
+        const songName = document.getElementById('songName').value || 'Untitled';
+        
+        // Build rhythm and pitch arrays from blocks
+        const rhythm = [];
+        const pitch = [];
+        let currentPos = 0;
+        
+        // Sort blocks by start position
+        const sortedBlocks = [...this.blocks].sort((a, b) => a.start - b.start);
+        
+        sortedBlocks.forEach(block => {
+            // Add blanks for any gaps
+            if (block.start > currentPos) {
+                const gap = block.start - currentPos;
+                rhythm.push(gap === 1 ? 'x' : `${gap}x`);
+                pitch.push(null);
+            }
+            
+            // Add the block
+            rhythm.push(String(block.length));
+            
+            // Add pitch if pitch mode is enabled and block has pitch
+            if (this.pitchEnabled && block.pitch !== undefined) {
+                pitch.push(this.formatPitchForExport(block.pitch));
+            } else {
+                pitch.push(null);
+            }
+            
+            currentPos = block.start + block.length;
+        });
+        
+        // Add trailing blanks if needed
+        if (currentPos < this.totalUnits) {
+            const gap = this.totalUnits - currentPos;
+            rhythm.push(gap === 1 ? 'x' : `${gap}x`);
+            pitch.push(null);
+        }
+        
+        const irnData = {
+            name: songName,
+            rhythm: rhythm,
+            pitch: this.pitchEnabled ? pitch : undefined,
+            settings: {
+                tempo: this.tempo,
+                unitsPerMeasure: this.unitsPerMeasure,
+                pickupOffset: this.pickupOffset
+            }
+        };
+        
+        const jsonStr = JSON.stringify(irnData, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${songName.replace(/[^a-z0-9]/gi, '_')}.irn`;
+        link.click();
+        
+        URL.revokeObjectURL(url);
+    }
+    
+    formatPitchForExport(pitch) {
+        // Convert absolute pitch to notation with octave modifiers
+        // Base octave is 1-7, +1 means 8, ++1 means 15, -1 means -6, etc.
+        if (pitch >= 1 && pitch <= 7) {
+            return String(pitch);
+        } else if (pitch > 7) {
+            const octaves = Math.floor((pitch - 1) / 7);
+            const basePitch = ((pitch - 1) % 7) + 1;
+            return '+'.repeat(octaves) + basePitch;
+        } else {
+            const octaves = Math.ceil(Math.abs(pitch - 1) / 7);
+            const basePitch = ((((pitch - 1) % 7) + 7) % 7) + 1;
+            return '-'.repeat(octaves) + basePitch;
+        }
+    }
+    
+    async importIrn(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+            const text = await file.text();
+            const irnData = JSON.parse(text);
+            
+            // Set song name
+            if (irnData.name) {
+                document.getElementById('songName').value = irnData.name;
+            }
+            
+            // Apply settings if present
+            if (irnData.settings) {
+                if (irnData.settings.tempo) {
+                    this.tempo = irnData.settings.tempo;
+                    document.getElementById('tempoSlider').value = Math.min(this.tempo, 240);
+                    document.getElementById('tempoInput').value = this.tempo;
+                }
+                if (irnData.settings.unitsPerMeasure) {
+                    this.unitsPerMeasure = irnData.settings.unitsPerMeasure;
+                    document.getElementById('unitsPerMeasure').value = this.unitsPerMeasure;
+                }
+                if (irnData.settings.pickupOffset !== undefined) {
+                    this.pickupOffset = irnData.settings.pickupOffset;
+                    document.getElementById('pickupOffset').value = this.pickupOffset;
+                }
+            }
+            
+            // Parse rhythm and pitch arrays
+            this.blocks = [];
+            let currentPos = 0;
+            
+            const rhythmArray = irnData.rhythm || [];
+            const pitchArray = irnData.pitch || [];
+            
+            rhythmArray.forEach((item, index) => {
+                if (item.endsWith('x')) {
+                    // This is a blank/space
+                    const count = item === 'x' ? 1 : parseInt(item.slice(0, -1));
+                    currentPos += count;
+                } else {
+                    // This is a block
+                    const length = parseInt(item);
+                    const pitchStr = pitchArray[index];
+                    const pitch = pitchStr ? this.parsePitch(pitchStr) : 4;
+                    
+                    this.blocks.push({
+                        id: Date.now() + Math.random(),
+                        start: currentPos,
+                        length: length,
+                        pitch: pitch
+                    });
+                    
+                    currentPos += length;
+                }
+            });
+            
+            // Update total units if needed
+            if (currentPos > this.totalUnits) {
+                this.totalUnits = currentPos;
+                document.getElementById('totalDashes').value = this.totalUnits;
+            }
+            
+            // Enable pitch mode if pitch data exists
+            if (irnData.pitch && irnData.pitch.some(p => p !== null)) {
+                this.pitchEnabled = true;
+                document.getElementById('pitchToggle').checked = true;
+                document.getElementById('pitchInputGroup').style.display = 'block';
+                document.getElementById('rhythmView').classList.add('pitch-mode');
+                this.updatePitchRange();
+            }
+            
+            this.render();
+            
+        } catch (err) {
+            console.error('Error importing IRN file:', err);
+            alert('Error importing IRN file. Please check the file format.');
+        }
+        
+        // Reset file input
+        e.target.value = '';
     }
     
     // MIDI Import

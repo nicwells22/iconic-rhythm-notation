@@ -545,6 +545,30 @@ body {
     outline-offset: 2px;
 }
 
+/* Song Info */
+.song-info-group {
+    margin-bottom: 10px;
+}
+
+.song-info-group input {
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.irn-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.irn-buttons .btn {
+    flex: 1;
+}
+
 /* Numeric Input */
 .numeric-input-group {
     display: flex;
