@@ -832,16 +832,16 @@ class RhythmBlocks {
         
         if (resizeHandle) {
             this.isResizing = true;
-            const blockId = parseInt(resizeHandle.dataset.blockId);
-            this.selectedBlock = this.blocks.find(b => b.id === blockId);
+            const blockIdStr = resizeHandle.dataset.blockId;
+            this.selectedBlock = this.blocks.find(b => String(b.id) === blockIdStr);
             this.dragStartX = e.clientX;
             this.dragStartLength = this.selectedBlock.length;
             e.preventDefault();
         } else if (blockEl) {
             this.isDragging = true;
-            const blockId = parseInt(blockEl.dataset.blockId);
-            this.selectedBlock = this.blocks.find(b => b.id === blockId);
-            this.selectBlock(blockId);
+            const blockIdStr = blockEl.dataset.blockId;
+            this.selectedBlock = this.blocks.find(b => String(b.id) === blockIdStr);
+            this.selectBlock(this.selectedBlock.id);
             this.dragStartX = e.clientX;
             this.dragStartPosition = this.selectedBlock.start;
             e.preventDefault();
